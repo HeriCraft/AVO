@@ -1,0 +1,40 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "AVO API Documentation",
+        "description": "L5 Swagger OpenApi description",
+        "contact": {
+            "email": "admin@avo.local"
+        },
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://api.avo.local",
+            "description": "API Server"
+        }
+    ],
+    "paths": {
+        "/api/health": {
+            "get": {
+                "tags": [
+                    "System"
+                ],
+                "summary": "Health Check",
+                "description": "Returns the health status of the API",
+                "operationId": "a1dd1f4ddb17ebda7dbe6cb095703f15",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                }
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "System",
+            "description": "System"
+        }
+    ]
+}

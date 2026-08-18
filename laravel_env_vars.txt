@@ -1,0 +1,27 @@
+# A AJOUTER DANS apps/avo-api/.env
+
+APP_URL=http://api.avo.local
+FRONTEND_URL=http://app.avo.local
+INSPECTOR_URL=http://inspector.avo.local
+
+DB_CONNECTION=mysql
+DB_HOST=mariadb
+DB_PORT=3306
+DB_DATABASE=avo
+DB_USERNAME=avo_user
+DB_PASSWORD=secret
+
+CACHE_STORE=redis
+QUEUE_CONNECTION=redis
+SESSION_DRIVER=redis
+
+REDIS_CLIENT=phpredis
+REDIS_HOST=redis
+REDIS_PASSWORD=null
+REDIS_PORT=6379
+
+TELESCOPE_ENABLED=true
+
+L5_SWAGGER_GENERATE_ALWAYS=true
+L5_SWAGGER_CONST_HOST=http://api.avo.local
+L5_SWAGGER_UI_URL=http://inspector.avo.local/api/documentation

@@ -1,0 +1,94 @@
+version: '3.8'
+
+services:
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: avo-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./apps/avo-api:/var/www/html
+    networks:
+      - avo-network
+    depends_on:
+      - avo-api
+      - avo-web
+
+  # Backend API Laravel
+  avo-api:
+    build:
+      context: ./docker/php
+      dockerfile: Dockerfile
+    container_name: avo-api
+    volumes:
+      - ./apps/avo-api:/var/www/html
+    networks:
+      - avo-network
+    depends_on:
+      - mariadb
+      - redis
+
+  # Worker Horizon via Supervisord
+  avo-horizon:
+    build:
+      context: ./docker/php
+      dockerfile: Dockerfile
+    container_name: avo-horizon
+    volumes:
+      - ./apps/avo-api:/var/www/html
+      - ./docker/php/supervisord.conf:/etc/supervisord.conf:ro
+    command: ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
+    networks:
+      - avo-network
+    depends_on:
+      - mariadb
+      - redis
+      - avo-api
+
+  # Frontend Vue 3 Vite
+  avo-web:
+    image: node:20-alpine
+    container_name: avo-web
+    working_dir: /app
+    volumes:
+      - ./apps/avo-web:/app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    networks:
+      - avo-network
+
+  # Base de donnees MariaDB 12.3.2
+  mariadb:
+    image: mariadb:12.3.2
+    container_name: avo-mariadb
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-avo}
+      MYSQL_USER: ${DB_USERNAME:-avo_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+    ports:
+      - "3306:3306"
+    volumes:
+      - avo-mysql-data:/var/lib/mysql
+    networks:
+      - avo-network
+
+  # Cache & Queues Redis 7
+  redis:
+    image: redis:7-alpine
+    container_name: avo-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - avo-redis-data:/data
+    networks:
+      - avo-network
+
+networks:
+  avo-network:
+    driver: bridge
+
+volumes:
+  avo-mysql-data:
+  avo-redis-data:
