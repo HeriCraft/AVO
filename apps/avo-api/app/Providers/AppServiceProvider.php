@@ -19,6 +19,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        \Illuminate\Support\Facades\Event::listen(
+            \App\Users\Events\UserLoggedIn::class,
+            \App\Users\Listeners\LogUserActivityListener::class
+        );
     }
 }
