@@ -36,6 +36,7 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/dashboard/metrics', [AdminDashboardController::class, 'metrics']);
         
         Route::get('/users', [AdminUserController::class, 'index']);
+        Route::post('/users', [AdminUserController::class, 'store']);
         Route::patch('/users/{id}/toggle-status', [AdminUserController::class, 'toggleStatus']);
         
         Route::get('/logs', [AdminLogsController::class, 'index']);

@@ -328,6 +328,77 @@
                         "bearerAuth": []
                     }
                 ]
+            },
+            "post": {
+                "tags": [
+                    "Admin Users"
+                ],
+                "summary": "Create a new user from admin dashboard",
+                "operationId": "44769d8e7364500dce08f55e70532db0",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "username",
+                                    "email",
+                                    "password",
+                                    "role"
+                                ],
+                                "properties": {
+                                    "username": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "minLength": 8
+                                    },
+                                    "role": {
+                                        "type": "string",
+                                        "enum": [
+                                            "USER"
+                                        ]
+                                    },
+                                    "first_name": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "last_name": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "company": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "company_role": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "User created"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/admin/users/{id}/toggle-status": {
