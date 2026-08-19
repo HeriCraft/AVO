@@ -5,8 +5,10 @@ namespace App\Jobs\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use App\Persistence\Models\JobPost;
 use App\Jobs\Events\JobPublished;
+use App\Jobs\GenerateTagsForJob;
 use OpenApi\Attributes as OA;
 
 class JobController extends Controller
@@ -25,71 +27,37 @@ class JobController extends Controller
         return response()->json(JobPost::with('user:id,name')->where('user_id', Auth::id())->latest()->get());
     }
 
-    #[OA\Post(
-        path: "/api/jobs",
-        summary: "Create a new job",
-        security: [["bearerAuth" => []]],
-        tags: ["Jobs"],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                required: ["title", "description", "status"],
-                properties: [
-                    new OA\Property(property: "title", type: "string"),
-                    new OA\Property(property: "description", type: "string"),
-                    new OA\Property(property: "status", type: "string", enum: ["DRAFT", "PUBLISHED", "CLOSED"])
-                ]
-            )
-        ),
-        responses: [
-            new OA\Response(response: 201, description: "Job created")
-        ]
-    )]
     public function store(Request $request)
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'status' => 'required|in:DRAFT,PUBLISHED,CLOSED',
+            'cover_image' => 'nullable|image|mimes:jpeg,png,webp|max:2048',
         ]);
+
+        $coverImagePath = null;
+        if ($request->hasFile('cover_image')) {
+            $coverImagePath = $request->file('cover_image')->store('jobs', 'public');
+        }
 
         $job = JobPost::create([
             'title' => $validated['title'],
             'description' => $validated['description'],
             'status' => $validated['status'],
             'user_id' => Auth::id(),
+            'cover_image_path' => $coverImagePath,
         ]);
 
         if ($job->status === 'PUBLISHED') {
             JobPublished::dispatch($job);
         }
 
+        GenerateTagsForJob::dispatch($job);
+
         return response()->json($job, 201);
     }
 
-    #[OA\Put(
-        path: "/api/jobs/{id}",
-        summary: "Update an existing job",
-        security: [["bearerAuth" => []]],
-        tags: ["Jobs"],
-        parameters: [
-            new OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer"))
-        ],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                properties: [
-                    new OA\Property(property: "title", type: "string"),
-                    new OA\Property(property: "description", type: "string"),
-                    new OA\Property(property: "status", type: "string", enum: ["DRAFT", "PUBLISHED", "CLOSED"])
-                ]
-            )
-        ),
-        responses: [
-            new OA\Response(response: 200, description: "Job updated"),
-            new OA\Response(response: 404, description: "Job not found")
-        ]
-    )]
     public function update(Request $request, $id)
     {
         $job = JobPost::where('user_id', Auth::id())->findOrFail($id);
@@ -98,14 +66,28 @@ class JobController extends Controller
             'title' => 'sometimes|required|string|max:255',
             'description' => 'sometimes|required|string',
             'status' => 'sometimes|required|in:DRAFT,PUBLISHED,CLOSED',
+            'cover_image' => 'nullable|image|mimes:jpeg,png,webp|max:2048',
         ]);
 
+        if ($request->hasFile('cover_image')) {
+            if ($job->cover_image_path) {
+                Storage::disk('public')->delete($job->cover_image_path);
+            }
+            $validated['cover_image_path'] = $request->file('cover_image')->store('jobs', 'public');
+        }
+        unset($validated['cover_image']);
+
         $wasPublished = $job->status !== 'PUBLISHED' && ($validated['status'] ?? '') === 'PUBLISHED';
+        $descriptionChanged = isset($validated['description']) && $job->description !== $validated['description'];
 
         $job->update($validated);
 
         if ($wasPublished) {
             JobPublished::dispatch($job);
+        }
+
+        if ($descriptionChanged) {
+            GenerateTagsForJob::dispatch($job);
         }
 
         return response()->json($job);
@@ -127,6 +109,11 @@ class JobController extends Controller
     public function destroy($id)
     {
         $job = JobPost::where('user_id', Auth::id())->findOrFail($id);
+        
+        if ($job->cover_image_path) {
+            Storage::disk('public')->delete($job->cover_image_path);
+        }
+        
         $job->delete();
 
         return response()->json(null, 204);

@@ -16,6 +16,12 @@ class JobPost extends Model
         'description',
         'status',
         'user_id',
+        'cover_image_path',
+        'tags'
+    ];
+
+    protected $casts = [
+        'tags' => 'array',
     ];
 
     public function user()

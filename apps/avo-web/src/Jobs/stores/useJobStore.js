@@ -24,7 +24,11 @@ export const useJobStore = defineStore('jobs', () => {
     loading.value = true
     error.value = null
     try {
-      const response = await apiClient.post('/jobs', jobData)
+      const response = await apiClient.post('/jobs', jobData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
       jobs.value.unshift(response.data)
       return { success: true }
     } catch (err) {
@@ -39,7 +43,13 @@ export const useJobStore = defineStore('jobs', () => {
     loading.value = true
     error.value = null
     try {
-      const response = await apiClient.put(`/jobs/${id}`, jobData)
+      // Laravel requires POST with _method=PUT for multipart/form-data
+      jobData.append('_method', 'PUT')
+      const response = await apiClient.post(`/jobs/${id}`, jobData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
       const index = jobs.value.findIndex(j => j.id === id)
       if (index !== -1) {
         jobs.value[index] = response.data

@@ -36,6 +36,8 @@ services:
       context: ./docker/php
       dockerfile: Dockerfile
     container_name: avo-horizon
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-null}
     volumes:
       - ./apps/avo-api:/var/www/html
       - ./docker/php/supervisord.conf:/etc/supervisord.conf:ro
