@@ -58,4 +58,9 @@ class User extends Authenticatable implements JWTSubject
             'status' => $this->status,
         ];
     }
+
+    public function settings()
+    {
+        return $this->hasOne(UserSetting::class);
+    }
 }

@@ -1,15 +1,21 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { usersRoutes } from './Users'
-import { jobsRoutes } from './Jobs'
 import { useAuthStore } from './Users/stores/useAuthStore'
 
 const routes = [
   {
     path: '/',
-    redirect: '/dashboard'
+    component: () => import('./Shared/layouts/UserLayout.vue'),
+    meta: { requiresAuth: true },
+    children: [
+      { path: '', redirect: '/dashboard' },
+      { path: 'dashboard', name: 'UserDashboard', component: () => import('./Dashboard/views/UserDashboardView.vue') },
+      { path: 'jobs', name: 'Jobs', component: () => import('./Jobs/views/JobsListView.vue') },
+      { path: 'booking', name: 'Booking', component: () => import('./Booking/views/BookingCalendarView.vue') },
+      { path: 'settings', name: 'Settings', component: () => import('./UserSettings/views/SettingsView.vue') }
+    ]
   },
   ...usersRoutes,
-  ...jobsRoutes,
   {
     path: '/admin',
     component: () => import('./Shared/layouts/AdminLayout.vue'),
@@ -37,17 +43,14 @@ router.beforeEach((to, from, next) => {
   }
 
   if (authStore.isAuthenticated) {
-    // SUPER_ADMIN Constraint: Must stay in /admin territory
     if (authStore.isSuperAdmin && !to.path.startsWith('/admin')) {
       return next('/admin/dashboard')
     }
     
-    // Normal User Constraint: Cannot access /admin territory
     if (!authStore.isSuperAdmin && to.path.startsWith('/admin')) {
       return next('/dashboard')
     }
     
-    // Authenticated users shouldn't see login page
     if (to.path === '/login') {
       return next(authStore.isSuperAdmin ? '/admin/dashboard' : '/dashboard')
     }

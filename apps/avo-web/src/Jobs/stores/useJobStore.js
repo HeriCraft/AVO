@@ -35,11 +35,46 @@ export const useJobStore = defineStore('jobs', () => {
     }
   }
 
+  async function updateJob(id, jobData) {
+    loading.value = true
+    error.value = null
+    try {
+      const response = await apiClient.put(`/jobs/${id}`, jobData)
+      const index = jobs.value.findIndex(j => j.id === id)
+      if (index !== -1) {
+        jobs.value[index] = response.data
+      }
+      return { success: true }
+    } catch (err) {
+      error.value = err.response?.data?.message || 'Failed to update job'
+      return { success: false, error: error.value }
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function deleteJob(id) {
+    loading.value = true
+    error.value = null
+    try {
+      await apiClient.delete(`/jobs/${id}`)
+      jobs.value = jobs.value.filter(j => j.id !== id)
+      return { success: true }
+    } catch (err) {
+      error.value = err.response?.data?.message || 'Failed to delete job'
+      return { success: false, error: error.value }
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     jobs,
     loading,
     error,
     fetchJobs,
-    createJob
+    createJob,
+    updateJob,
+    deleteJob
   }
 })

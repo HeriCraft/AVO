@@ -2,20 +2,15 @@
 
 namespace App\Persistence\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Job extends Model
+class UserSetting extends Model
 {
-    use HasFactory;
-
-    protected $table = 'job_postings';
-
     protected $fillable = [
-        'title',
-        'description',
-        'status',
         'user_id',
+        'ai_voice_tone',
+        'ai_interview_language',
+        'ai_strictness_level'
     ];
 
     public function user()

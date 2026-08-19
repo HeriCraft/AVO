@@ -35,36 +35,11 @@
                 "tags": [
                     "Jobs"
                 ],
-                "summary": "List all jobs",
+                "summary": "List all jobs for current user",
                 "operationId": "1abe28a541df769e888fe7f8c959b61b",
                 "responses": {
                     "200": {
-                        "description": "List of jobs",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "properties": {
-                                            "id": {
-                                                "type": "integer"
-                                            },
-                                            "title": {
-                                                "type": "string"
-                                            },
-                                            "status": {
-                                                "type": "string"
-                                            },
-                                            "created_at": {
-                                                "type": "string",
-                                                "format": "date-time"
-                                            }
-                                        },
-                                        "type": "object"
-                                    }
-                                }
-                            }
-                        }
+                        "description": "List of jobs"
                     }
                 },
                 "security": [
@@ -91,12 +66,10 @@
                                 ],
                                 "properties": {
                                     "title": {
-                                        "type": "string",
-                                        "example": "Senior AI Engineer"
+                                        "type": "string"
                                     },
                                     "description": {
-                                        "type": "string",
-                                        "example": "We are looking for a..."
+                                        "type": "string"
                                     },
                                     "status": {
                                         "type": "string",
@@ -114,28 +87,95 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Job created successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "id": {
-                                            "type": "integer"
-                                        },
-                                        "title": {
-                                            "type": "string"
-                                        },
-                                        "status": {
-                                            "type": "string"
-                                        }
+                        "description": "Job created"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/jobs/{id}": {
+            "put": {
+                "tags": [
+                    "Jobs"
+                ],
+                "summary": "Update an existing job",
+                "operationId": "21a804bb1f9e8c7cc3f02600106d74a8",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "title": {
+                                        "type": "string"
                                     },
-                                    "type": "object"
-                                }
+                                    "description": {
+                                        "type": "string"
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "DRAFT",
+                                            "PUBLISHED",
+                                            "CLOSED"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
                             }
                         }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Job updated"
                     },
-                    "422": {
-                        "description": "Validation error"
+                    "404": {
+                        "description": "Job not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Jobs"
+                ],
+                "summary": "Delete a job",
+                "operationId": "df54bd2b6fe2ca668eccb7fece5e60bf",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Job deleted"
+                    },
+                    "404": {
+                        "description": "Job not found"
                     }
                 },
                 "security": [
@@ -264,6 +304,82 @@
                 "responses": {
                     "204": {
                         "description": "Setting deleted"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/user/settings": {
+            "get": {
+                "tags": [
+                    "User Settings"
+                ],
+                "summary": "Get current user settings",
+                "operationId": "81099c21f70d7739484d5d53a5c53896",
+                "responses": {
+                    "200": {
+                        "description": "User settings"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "User Settings"
+                ],
+                "summary": "Update user settings and profile",
+                "operationId": "aca78548020ac0c9259ae4aee9b3b167",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "first_name": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "last_name": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "company": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "company_role": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "ai_voice_tone": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "ai_interview_language": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "ai_strictness_level": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Settings updated"
                     }
                 },
                 "security": [
@@ -501,6 +617,59 @@
                     }
                 }
             }
+        },
+        "/api/user/dashboard/metrics": {
+            "get": {
+                "tags": [
+                    "Dashboard"
+                ],
+                "summary": "Get user dashboard metrics",
+                "operationId": "83d91b7a08f3c76616a46e65c3f2ffaa",
+                "responses": {
+                    "200": {
+                        "description": "Dashboard metrics payload"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/user/dashboard/details": {
+            "get": {
+                "tags": [
+                    "Dashboard"
+                ],
+                "summary": "Get contextual details for dashboard KPI",
+                "operationId": "2f1864742db0a50840a83fdb309ad469",
+                "parameters": [
+                    {
+                        "name": "filter",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "pending_actions",
+                                "active_jobs",
+                                "ai_interviews"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detailed data for KPI"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
         }
     },
     "components": {
@@ -526,6 +695,10 @@
             "description": "Admin Settings"
         },
         {
+            "name": "User Settings",
+            "description": "User Settings"
+        },
+        {
             "name": "Admin",
             "description": "Admin"
         },
@@ -540,6 +713,10 @@
         {
             "name": "Authentication",
             "description": "Authentication"
+        },
+        {
+            "name": "Dashboard",
+            "description": "Dashboard"
         }
     ]
 }

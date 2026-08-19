@@ -28,11 +28,22 @@ use App\Settings\Http\Controllers\PlatformSettingsController;
 Route::post('/auth/login', [AuthController::class, 'login']);
 
 Route::middleware('auth:api')->group(function () {
-    Route::get('/jobs', [JobController::class, 'index']);
-    Route::post('/jobs', [JobController::class, 'store']);
+    // User Routes
+    Route::middleware('role:USER')->group(function () {
+        Route::get('/user/dashboard/metrics', [\App\Users\Http\Controllers\UserDashboardController::class, 'metrics']);
+        Route::get('/user/dashboard/details', [\App\Users\Http\Controllers\UserDashboardController::class, 'details']);
+        
+        Route::get('/jobs', [JobController::class, 'index']);
+        Route::post('/jobs', [JobController::class, 'store']);
+        Route::put('/jobs/{id}', [JobController::class, 'update']);
+        Route::delete('/jobs/{id}', [JobController::class, 'destroy']);
+        
+        Route::get('/user/settings', [\App\Settings\Http\Controllers\UserSettingsController::class, 'show']);
+        Route::put('/user/settings', [\App\Settings\Http\Controllers\UserSettingsController::class, 'update']);
+    });
 
     // Super Admin Routes
-    Route::prefix('admin')->group(function () {
+    Route::middleware('role:SUPER_ADMIN')->prefix('admin')->group(function () {
         Route::get('/dashboard/metrics', [AdminDashboardController::class, 'metrics']);
         
         Route::get('/users', [AdminUserController::class, 'index']);
