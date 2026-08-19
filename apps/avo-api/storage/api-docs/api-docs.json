@@ -145,6 +145,220 @@
                 ]
             }
         },
+        "/api/admin/settings": {
+            "get": {
+                "tags": [
+                    "Admin Settings"
+                ],
+                "summary": "List platform settings",
+                "operationId": "4ebfe568eb473d8219ca946aa5a5c1d5",
+                "responses": {
+                    "200": {
+                        "description": "Settings"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Admin Settings"
+                ],
+                "summary": "Create a platform setting",
+                "operationId": "edf184b986c91e1cedc4b0963998f2ca",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "key"
+                                ],
+                                "properties": {
+                                    "key": {
+                                        "type": "string"
+                                    },
+                                    "value": {
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Setting created"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/settings/{key}": {
+            "put": {
+                "tags": [
+                    "Admin Settings"
+                ],
+                "summary": "Update a platform setting",
+                "operationId": "4761a4f3678e7fd690f91c3a981133c2",
+                "parameters": [
+                    {
+                        "name": "key",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "value": {
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Setting updated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Admin Settings"
+                ],
+                "summary": "Delete a platform setting",
+                "operationId": "727b305b8e6bb37ccafa54f4988e5449",
+                "parameters": [
+                    {
+                        "name": "key",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Setting deleted"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/dashboard/metrics": {
+            "get": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Get Admin Dashboard Metrics",
+                "operationId": "1e8aeedc00c36ccd873d2074942e85dd",
+                "responses": {
+                    "200": {
+                        "description": "Dashboard Metrics"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/logs": {
+            "get": {
+                "tags": [
+                    "Admin Logs"
+                ],
+                "summary": "List activity logs",
+                "operationId": "1aa74ede5541fd55abbc9e44329a7138",
+                "responses": {
+                    "200": {
+                        "description": "Logs list"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/users": {
+            "get": {
+                "tags": [
+                    "Admin Users"
+                ],
+                "summary": "List users",
+                "operationId": "7513a08c2ba82c9a7b6d8b84e7df4624",
+                "responses": {
+                    "200": {
+                        "description": "List of users"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/users/{id}/toggle-status": {
+            "patch": {
+                "tags": [
+                    "Admin Users"
+                ],
+                "summary": "Toggle user status",
+                "operationId": "bbe326c9135c1f182141e800aa11f1d9",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Status updated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/auth/login": {
             "post": {
                 "tags": [
@@ -235,6 +449,22 @@
         {
             "name": "Jobs",
             "description": "Jobs"
+        },
+        {
+            "name": "Admin Settings",
+            "description": "Admin Settings"
+        },
+        {
+            "name": "Admin",
+            "description": "Admin"
+        },
+        {
+            "name": "Admin Logs",
+            "description": "Admin Logs"
+        },
+        {
+            "name": "Admin Users",
+            "description": "Admin Users"
         },
         {
             "name": "Authentication",

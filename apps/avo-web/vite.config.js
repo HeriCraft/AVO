@@ -6,6 +6,15 @@ export default defineConfig({
   server: {
     host: '0.0.0.0', // Expose sur le réseau Docker
     port: 5173,
+    proxy: {
+      '/api': {
+        target: 'http://nginx', 
+        changeOrigin: true,
+        headers: {
+          Host: 'api.avo.local'
+        }
+      }
+    },
     hmr: {
       host: 'app.avo.local', // Les connexions WebSocket se font via ce domaine
       clientPort: 80,        // à travers le reverse proxy Nginx
