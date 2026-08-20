@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { useJobStore } from '../stores/useJobStore'
 
 const jobStore = useJobStore()
@@ -18,9 +18,20 @@ const formData = ref({
 })
 const coverImageFile = ref(null)
 const fileInput = ref(null)
+let pollInterval = null
 
 onMounted(() => {
   jobStore.fetchJobs()
+  // Poll if any job has pending tags
+  pollInterval = setInterval(() => {
+    if (jobStore.jobs.some(j => j.tags === null)) {
+      jobStore.fetchJobs() // Silently fetch updates
+    }
+  }, 5000)
+})
+
+onUnmounted(() => {
+  if (pollInterval) clearInterval(pollInterval)
 })
 
 const getImageUrl = (path) => {
@@ -146,10 +157,19 @@ const formatDate = (dateString) => {
           
           <!-- AI Tags -->
           <div class="flex flex-wrap gap-2 mt-auto mb-2">
-            <span v-for="tag in job.tags || []" :key="tag" class="px-2 py-1 text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-md border border-slate-200 dark:border-slate-700">
-              {{ tag }}
-            </span>
-            <span v-if="job.tags && job.tags.length === 0" class="text-xs text-slate-400 italic">No tags generated</span>
+            <template v-if="job.tags === null">
+              <div class="flex gap-2">
+                <span class="h-6 w-16 bg-slate-200 dark:bg-slate-700 rounded-md animate-pulse"></span>
+                <span class="h-6 w-20 bg-slate-200 dark:bg-slate-700 rounded-md animate-pulse" style="animation-delay: 150ms"></span>
+                <span class="h-6 w-14 bg-slate-200 dark:bg-slate-700 rounded-md animate-pulse" style="animation-delay: 300ms"></span>
+              </div>
+            </template>
+            <template v-else>
+              <span v-for="tag in job.tags" :key="tag" class="px-2 py-1 text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-md border border-slate-200 dark:border-slate-700">
+                {{ tag }}
+              </span>
+              <span v-if="job.tags.length === 0" class="text-xs text-slate-400 italic">No tags generated</span>
+            </template>
           </div>
         </div>
         

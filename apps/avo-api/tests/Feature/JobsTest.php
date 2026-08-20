@@ -3,11 +3,12 @@
 namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 use App\Persistence\Models\User;
-use App\Persistence\Models\Job;
+use App\Persistence\Models\JobPost;
 use App\Jobs\Events\JobPublished;
-use Illuminate\Support\Facades\Event;
+use App\Jobs\Events\JobPostCreated;
 
 class JobsTest extends TestCase
 {
@@ -15,8 +16,8 @@ class JobsTest extends TestCase
 
     public function test_authenticated_user_can_list_jobs()
     {
-        $user = User::factory()->create();
-        Job::create([
+        $user = User::factory()->create(['role' => 'USER']);
+        JobPost::create([
             'title' => 'Software Engineer',
             'description' => 'Build things.',
             'status' => 'PUBLISHED',
@@ -32,9 +33,8 @@ class JobsTest extends TestCase
 
     public function test_authenticated_user_can_create_a_job_in_draft_status()
     {
-        Event::fake();
-
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => 'USER']);
+        Event::fake([JobPostCreated::class]);
 
         $response = $this->actingAs($user, 'api')->postJson('/api/jobs', [
             'title' => 'Product Manager',
@@ -48,16 +48,17 @@ class JobsTest extends TestCase
         $this->assertDatabaseHas('job_postings', [
             'title' => 'Product Manager',
             'status' => 'DRAFT',
+            'user_id' => $user->id,
         ]);
 
-        Event::assertNotDispatched(JobPublished::class);
+        Event::assertDispatched(JobPostCreated::class);
     }
 
     public function test_publishing_a_job_fires_job_published_event()
     {
-        Event::fake();
+        Event::fake([JobPublished::class, JobPostCreated::class]);
 
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => 'USER']);
 
         $response = $this->actingAs($user, 'api')->postJson('/api/jobs', [
             'title' => 'AI Engineer',
@@ -70,11 +71,13 @@ class JobsTest extends TestCase
         Event::assertDispatched(JobPublished::class, function ($event) {
             return $event->job->title === 'AI Engineer';
         });
+        Event::assertDispatched(JobPostCreated::class);
     }
 
     public function test_unauthenticated_users_cannot_access_jobs()
     {
-        $this->getJson('/api/jobs')->assertStatus(401);
+        $response = $this->getJson('/api/jobs');
+        $response->assertStatus(401);
         $this->postJson('/api/jobs', [])->assertStatus(401);
     }
 }

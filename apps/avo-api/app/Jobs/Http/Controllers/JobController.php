@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use App\Persistence\Models\JobPost;
 use App\Jobs\Events\JobPublished;
-use App\Jobs\GenerateTagsForJob;
+use App\Jobs\Events\JobPostCreated;
 use OpenApi\Attributes as OA;
 
 class JobController extends Controller
@@ -53,7 +53,7 @@ class JobController extends Controller
             JobPublished::dispatch($job);
         }
 
-        GenerateTagsForJob::dispatch($job);
+        JobPostCreated::dispatch($job->id, $job->description);
 
         return response()->json($job, 201);
     }
@@ -87,7 +87,8 @@ class JobController extends Controller
         }
 
         if ($descriptionChanged) {
-            GenerateTagsForJob::dispatch($job);
+            // Re-trigger tag generation if description changed
+            JobPostCreated::dispatch($job->id, $job->description);
         }
 
         return response()->json($job);
