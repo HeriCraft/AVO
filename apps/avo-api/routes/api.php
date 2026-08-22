@@ -39,6 +39,8 @@ Route::middleware('auth:api')->group(function () {
         Route::put('/jobs/{id}', [JobController::class, 'update']);
         Route::delete('/jobs/{id}', [JobController::class, 'destroy']);
         
+        Route::get('/applications', [\App\Candidates\Controllers\RecruiterApplicationController::class, 'index']);
+        
         Route::get('/user/settings', [\App\Settings\Http\Controllers\UserSettingsController::class, 'show']);
         Route::put('/user/settings', [\App\Settings\Http\Controllers\UserSettingsController::class, 'update']);
     });

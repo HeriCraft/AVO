@@ -49,6 +49,35 @@
                 ]
             }
         },
+        "/api/jobs/{id}/tags": {
+            "get": {
+                "tags": [
+                    "Jobs"
+                ],
+                "summary": "Get tags for a job",
+                "operationId": "72c4623ff27fe9167045240f5d75e9ad",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Job tags"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/jobs/{id}": {
             "delete": {
                 "tags": [
