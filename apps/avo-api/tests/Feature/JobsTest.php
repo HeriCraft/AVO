@@ -8,7 +8,7 @@ use Tests\TestCase;
 use App\Persistence\Models\User;
 use App\Persistence\Models\JobPost;
 use App\Jobs\Events\JobPublished;
-use App\Jobs\Events\JobPostCreated;
+use App\Jobs\Events\JobPublishedEvent;
 
 class JobsTest extends TestCase
 {
@@ -34,7 +34,7 @@ class JobsTest extends TestCase
     public function test_authenticated_user_can_create_a_job_in_draft_status()
     {
         $user = User::factory()->create(['role' => 'USER']);
-        Event::fake([JobPostCreated::class]);
+        Event::fake([JobPublishedEvent::class]);
 
         $response = $this->actingAs($user, 'api')->postJson('/api/jobs', [
             'title' => 'Product Manager',
@@ -51,12 +51,12 @@ class JobsTest extends TestCase
             'user_id' => $user->id,
         ]);
 
-        Event::assertDispatched(JobPostCreated::class);
+        Event::assertDispatched(JobPublishedEvent::class);
     }
 
     public function test_publishing_a_job_fires_job_published_event()
     {
-        Event::fake([JobPublished::class, JobPostCreated::class]);
+        Event::fake([JobPublishedEvent::class]);
 
         $user = User::factory()->create(['role' => 'USER']);
 
@@ -68,10 +68,9 @@ class JobsTest extends TestCase
 
         $response->assertStatus(201);
 
-        Event::assertDispatched(JobPublished::class, function ($event) {
-            return $event->job->title === 'AI Engineer';
+        Event::assertDispatched(JobPublishedEvent::class, function ($event) {
+            return $event->title === 'AI Engineer';
         });
-        Event::assertDispatched(JobPostCreated::class);
     }
 
     public function test_unauthenticated_users_cannot_access_jobs()

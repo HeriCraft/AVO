@@ -7,6 +7,7 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Persistence\Models\Candidate;
+use App\Persistence\Models\Application;
 use App\Persistence\Models\JobPost;
 use App\Persistence\Models\Interview;
 use Carbon\Carbon;
@@ -28,7 +29,7 @@ class UserDashboardController extends Controller
         $userId = Auth::id();
 
         // Subquery for candidates belonging to the user's jobs
-        $candidatesQuery = Candidate::whereHas('jobPost', function($q) use ($userId) {
+        $candidatesQuery = Application::whereHas('jobPost', function($q) use ($userId) {
             $q->where('user_id', $userId);
         });
 
@@ -41,7 +42,7 @@ class UserDashboardController extends Controller
             ->whereIn('status', ['PUBLISHED', 'ACTIVE'])
             ->count();
 
-        $aiInterviews30d = Interview::whereHas('candidate.jobPost', function($q) use ($userId) {
+        $aiInterviews30d = Interview::whereHas('candidate.applications.jobPost', function($q) use ($userId) {
             $q->where('user_id', $userId);
         })->where('scheduled_at', '>=', Carbon::now()->subDays(30))->count();
 
@@ -65,10 +66,8 @@ class UserDashboardController extends Controller
             ->get()
             ->pluck('count', 'status');
 
-        // Acquisition (candidates created per day last 14 days)
-        // Ensure consistent date grouping depending on driver (MySQL/SQLite/Postgres). We'll use Eloquent collection for safe processing
+        // Acquisition
         $fourteenDaysAgo = Carbon::now()->subDays(14)->startOfDay();
-        
         $acquisitionRaw = (clone $candidatesQuery)
             ->where('created_at', '>=', $fourteenDaysAgo)
             ->get()
@@ -84,19 +83,27 @@ class UserDashboardController extends Controller
 
         // 3. Widgets
         $topGreenCandidates = (clone $candidatesQuery)
-            ->with('jobPost:id,title')
+            ->with(['jobPost:id,title', 'candidate:id,firstname,lastname'])
             ->where('ai_score', 'GREEN')
             ->orderBy('created_at', 'desc')
             ->take(5)
-            ->get();
+            ->get()
+            ->map(function($app) {
+                $app->name = trim($app->candidate?->firstname . ' ' . $app->candidate?->lastname);
+                return $app;
+            });
 
-        $todaysInterviews = Interview::with(['candidate.jobPost:id,title'])
-            ->whereHas('candidate.jobPost', function($q) use ($userId) {
+        $todaysInterviews = Interview::with(['candidate.applications.jobPost:id,title'])
+            ->whereHas('candidate.applications.jobPost', function($q) use ($userId) {
                 $q->where('user_id', $userId);
             })
             ->whereDate('scheduled_at', Carbon::today())
             ->orderBy('scheduled_at', 'asc')
-            ->get();
+            ->get()
+            ->map(function($int) {
+                $int->candidate->name = trim($int->candidate?->firstname . ' ' . $int->candidate?->lastname);
+                return $int;
+            });
 
         return response()->json([
             'kpis' => [
@@ -144,18 +151,22 @@ class UserDashboardController extends Controller
         $userId = Auth::id();
 
         if ($filter === 'pending_actions') {
-            $data = Candidate::with('jobPost:id,title')
+            $data = Application::with(['jobPost:id,title', 'candidate:id,firstname,lastname'])
                 ->whereHas('jobPost', function($q) use ($userId) {
                     $q->where('user_id', $userId);
                 })
                 ->where('status', 'PENDING_HUMAN_REVIEW')
                 ->orderBy('created_at', 'desc')
-                ->get();
+                ->get()
+                ->map(function($app) {
+                    $app->name = trim($app->candidate?->firstname . ' ' . $app->candidate?->lastname);
+                    return $app;
+                });
             return response()->json(['type' => 'candidates', 'data' => $data]);
         }
 
         if ($filter === 'active_jobs') {
-            $data = JobPost::withCount('candidates')
+            $data = JobPost::withCount('applications as candidates_count')
                 ->where('user_id', $userId)
                 ->whereIn('status', ['PUBLISHED', 'ACTIVE'])
                 ->orderBy('created_at', 'desc')
@@ -164,13 +175,17 @@ class UserDashboardController extends Controller
         }
 
         if ($filter === 'ai_interviews') {
-            $data = Interview::with(['candidate.jobPost:id,title'])
-                ->whereHas('candidate.jobPost', function($q) use ($userId) {
+            $data = Interview::with(['candidate.applications.jobPost:id,title'])
+                ->whereHas('candidate.applications.jobPost', function($q) use ($userId) {
                     $q->where('user_id', $userId);
                 })
                 ->where('scheduled_at', '>=', Carbon::now()->subDays(30))
                 ->orderBy('scheduled_at', 'desc')
-                ->get();
+                ->get()
+                ->map(function($int) {
+                    $int->candidate->name = trim($int->candidate?->firstname . ' ' . $int->candidate?->lastname);
+                    return $int;
+                });
             return response()->json(['type' => 'interviews', 'data' => $data]);
         }
 

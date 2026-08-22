@@ -34,6 +34,7 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/user/dashboard/details', [\App\Users\Http\Controllers\UserDashboardController::class, 'details']);
         
         Route::get('/jobs', [JobController::class, 'index']);
+        Route::get('/jobs/{id}/tags', [JobController::class, 'tags']);
         Route::post('/jobs', [JobController::class, 'store']);
         Route::put('/jobs/{id}', [JobController::class, 'update']);
         Route::delete('/jobs/{id}', [JobController::class, 'destroy']);
@@ -62,3 +63,13 @@ Route::middleware('auth:api')->group(function () {
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:api');
+
+// Public Candidate Routes
+Route::prefix('public')->group(function () {
+    Route::get('/jobs/{id}', [\App\Candidates\Controllers\PublicJobController::class, 'show']);
+    
+    // Application Flow
+    Route::post('/apply/{job_id}/upload', [\App\Candidates\Controllers\ApplyController::class, 'upload']);
+    Route::get('/apply/status/{tracking_id}', [\App\Candidates\Controllers\ApplyController::class, 'status']);
+    Route::post('/apply/validate/{tracking_id}', [\App\Candidates\Controllers\ApplyController::class, 'validateData']);
+});

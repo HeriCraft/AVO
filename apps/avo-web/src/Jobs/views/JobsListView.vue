@@ -1,6 +1,8 @@
 <script setup>
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, computed } from 'vue'
 import { useJobStore } from '../stores/useJobStore'
+import { marked } from 'marked'
+import DOMPurify from 'dompurify'
 
 const jobStore = useJobStore()
 
@@ -22,12 +24,13 @@ let pollInterval = null
 
 onMounted(() => {
   jobStore.fetchJobs()
-  // Poll if any job has pending tags
+  // Poll individually for jobs with pending tags
   pollInterval = setInterval(() => {
-    if (jobStore.jobs.some(j => j.tags === null)) {
-      jobStore.fetchJobs() // Silently fetch updates
-    }
-  }, 5000)
+    const pendingJobs = jobStore.jobs.filter(j => j.tags === null)
+    pendingJobs.forEach(job => {
+      jobStore.fetchJobTags(job.id)
+    })
+  }, 3000)
 })
 
 onUnmounted(() => {
@@ -66,6 +69,13 @@ const openView = (job) => {
   selectedJob.value = job
   showViewModal.value = true
 }
+
+const formattedSelectedJobDescription = computed(() => {
+  if (!selectedJob.value || !selectedJob.value.description) return ''
+  marked.setOptions({ breaks: true })
+  const html = marked.parse(selectedJob.value.description)
+  return DOMPurify.sanitize(html)
+})
 
 const handleSubmit = async () => {
   const payload = new FormData()
@@ -156,27 +166,41 @@ const formatDate = (dateString) => {
           <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Created {{ formatDate(job.created_at) }}</p>
           
           <!-- AI Tags -->
-          <div class="flex flex-wrap gap-2 mt-auto mb-2">
+          <div class="mt-auto mb-2">
             <template v-if="job.tags === null">
-              <div class="flex gap-2">
-                <span class="h-6 w-16 bg-slate-200 dark:bg-slate-700 rounded-md animate-pulse"></span>
-                <span class="h-6 w-20 bg-slate-200 dark:bg-slate-700 rounded-md animate-pulse" style="animation-delay: 150ms"></span>
-                <span class="h-6 w-14 bg-slate-200 dark:bg-slate-700 rounded-md animate-pulse" style="animation-delay: 300ms"></span>
+              <div class="flex items-center gap-2 px-3 py-2 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800/50 rounded-lg animate-pulse">
+                <svg class="w-4 h-4 text-indigo-500 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span class="text-xs font-medium text-indigo-600 dark:text-indigo-400">Generating AI Tags...</span>
               </div>
             </template>
             <template v-else>
-              <span v-for="tag in job.tags" :key="tag" class="px-2 py-1 text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-md border border-slate-200 dark:border-slate-700">
-                {{ tag }}
-              </span>
-              <span v-if="job.tags.length === 0" class="text-xs text-slate-400 italic">No tags generated</span>
+              <div class="flex flex-wrap gap-2">
+                <span v-for="tag in job.tags" :key="tag" class="px-2 py-1 text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-md border border-slate-200 dark:border-slate-700">
+                  {{ tag }}
+                </span>
+                <span v-if="job.tags.length === 0" class="text-xs text-slate-400 italic">No tags generated</span>
+              </div>
             </template>
           </div>
         </div>
         
         <!-- Footer -->
-        <div class="px-5 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex justify-end gap-3" @click.stop>
-          <button @click="openEdit(job)" class="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Edit</button>
-          <button @click="handleDelete(job.id)" class="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors">Delete</button>
+        <div class="px-5 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between" @click.stop>
+          <div>
+            <a v-if="job.status === 'PUBLISHED'" :href="`/jobs/${job.id}`" target="_blank" class="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors" title="Lien de candidature public">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+              Lien Public
+            </a>
+          </div>
+          <div class="flex items-center gap-3">
+            <button @click="openEdit(job)" class="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Edit</button>
+            <button @click="handleDelete(job.id)" class="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors">Delete</button>
+          </div>
         </div>
       </div>
     </div>
@@ -218,17 +242,27 @@ const formatDate = (dateString) => {
               </span>
             </div>
             
-            <div class="prose prose-slate dark:prose-invert max-w-none">
-              <h4 class="text-lg font-semibold mb-2">Job Description</h4>
-              <p class="whitespace-pre-wrap text-slate-600 dark:text-slate-300">{{ selectedJob.description }}</p>
+            <div class="prose prose-slate dark:prose-invert max-w-none prose-p:leading-relaxed prose-headings:font-bold prose-a:text-indigo-600 dark:prose-a:text-indigo-400">
+              <h4 class="text-lg font-semibold mb-2 text-slate-900 dark:text-white">Job Description</h4>
+              <div class="text-slate-600 dark:text-slate-300" v-html="formattedSelectedJobDescription"></div>
             </div>
           </div>
           
-          <div class="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex justify-end gap-3">
-            <button @click="showViewModal = false" class="px-5 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">Close</button>
-            <button @click="showViewModal = false; openEdit(selectedJob)" class="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
-              Edit Requisition
-            </button>
+          <div class="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between">
+            <div>
+              <a v-if="selectedJob.status === 'PUBLISHED'" :href="`/jobs/${selectedJob.id}`" target="_blank" class="inline-flex items-center gap-2 text-sm font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors" title="Lien de candidature public">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                Ouvrir la page publique
+              </a>
+            </div>
+            <div class="flex gap-3">
+              <button @click="showViewModal = false" class="px-5 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">Close</button>
+              <button @click="showViewModal = false; openEdit(selectedJob)" class="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+                Edit Requisition
+              </button>
+            </div>
           </div>
         </div>
       </div>

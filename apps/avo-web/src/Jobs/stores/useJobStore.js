@@ -63,6 +63,24 @@ export const useJobStore = defineStore('jobs', () => {
     }
   }
 
+  async function fetchJobTags(id) {
+    try {
+      const response = await apiClient.get(`/jobs/${id}/tags`)
+      const tags = response.data.tags
+      if (tags !== null) {
+        const index = jobs.value.findIndex(j => j.id === id)
+        if (index !== -1) {
+          jobs.value[index].tags = tags
+        }
+        return tags
+      }
+      return null
+    } catch (err) {
+      console.error('Failed to fetch tags for job', id)
+      return null
+    }
+  }
+
   async function deleteJob(id) {
     loading.value = true
     error.value = null
@@ -83,6 +101,7 @@ export const useJobStore = defineStore('jobs', () => {
     loading,
     error,
     fetchJobs,
+    fetchJobTags,
     createJob,
     updateJob,
     deleteJob

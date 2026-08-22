@@ -7,8 +7,7 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use App\Persistence\Models\JobPost;
-use App\Jobs\Events\JobPublished;
-use App\Jobs\Events\JobPostCreated;
+use App\Jobs\Events\JobPublishedEvent;
 use OpenApi\Attributes as OA;
 
 class JobController extends Controller
@@ -25,6 +24,24 @@ class JobController extends Controller
     public function index()
     {
         return response()->json(JobPost::with('user:id,name')->where('user_id', Auth::id())->latest()->get());
+    }
+
+    #[OA\Get(
+        path: "/api/jobs/{id}/tags",
+        summary: "Get tags for a job",
+        security: [["bearerAuth" => []]],
+        tags: ["Jobs"],
+        parameters: [
+            new OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        responses: [
+            new OA\Response(response: 200, description: "Job tags")
+        ]
+    )]
+    public function tags($id)
+    {
+        $job = JobPost::where('user_id', Auth::id())->findOrFail($id);
+        return response()->json(['tags' => $job->tags]);
     }
 
     public function store(Request $request)
@@ -49,11 +66,7 @@ class JobController extends Controller
             'cover_image_path' => $coverImagePath,
         ]);
 
-        if ($job->status === 'PUBLISHED') {
-            JobPublished::dispatch($job);
-        }
-
-        JobPostCreated::dispatch($job->id, $job->description);
+        JobPublishedEvent::dispatch($job->id, $job->title, $job->description);
 
         return response()->json($job, 201);
     }
@@ -77,18 +90,14 @@ class JobController extends Controller
         }
         unset($validated['cover_image']);
 
-        $wasPublished = $job->status !== 'PUBLISHED' && ($validated['status'] ?? '') === 'PUBLISHED';
         $descriptionChanged = isset($validated['description']) && $job->description !== $validated['description'];
+        $titleChanged = isset($validated['title']) && $job->title !== $validated['title'];
 
         $job->update($validated);
 
-        if ($wasPublished) {
-            JobPublished::dispatch($job);
-        }
-
-        if ($descriptionChanged) {
-            // Re-trigger tag generation if description changed
-            JobPostCreated::dispatch($job->id, $job->description);
+        if ($descriptionChanged || $titleChanged) {
+            // Re-trigger tag generation if description or title changed
+            JobPublishedEvent::dispatch($job->id, $job->title, $job->description);
         }
 
         return response()->json($job);

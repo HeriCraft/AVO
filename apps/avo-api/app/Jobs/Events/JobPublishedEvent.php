@@ -1,16 +1,17 @@
 <?php
 
-namespace App\AI\Events;
+namespace App\Jobs\Events;
 
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class JobTagsGenerated
+class JobPublishedEvent
 {
     use Dispatchable, SerializesModels;
 
     public function __construct(
-        public int $jobId,
-        public array $tags
+        public int $job_id,
+        public string $title,
+        public string $description
     ) {}
 }

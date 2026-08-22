@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 use App\Persistence\Models\User;
 use App\Persistence\Models\JobPost;
-use App\Jobs\Events\JobPostCreated;
+use App\Jobs\Events\JobPublishedEvent;
 
 class JobPostTest extends TestCase
 {
@@ -18,7 +18,7 @@ class JobPostTest extends TestCase
     public function test_can_create_job_with_cover_image_and_dispatch_event()
     {
         Storage::fake('public');
-        Event::fake([JobPostCreated::class]);
+        Event::fake([JobPublishedEvent::class]);
 
         $user = User::factory()->create(['role' => 'USER']);
 
@@ -38,8 +38,8 @@ class JobPostTest extends TestCase
         $this->assertNotNull($job->cover_image_path);
         Storage::disk('public')->assertExists($job->cover_image_path);
 
-        Event::assertDispatched(JobPostCreated::class, function ($event) use ($job) {
-            return $event->jobId === $job->id;
+        Event::assertDispatched(JobPublishedEvent::class, function ($event) use ($job) {
+            return $event->job_id === $job->id;
         });
     }
 }

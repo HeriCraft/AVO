@@ -1,8 +1,15 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { usersRoutes } from './Users'
+import { candidatesRoutes } from './Candidates/routes'
 import { useAuthStore } from './Users/stores/useAuthStore'
 
 const routes = [
+  {
+    path: '/_public', // Dummy path, children use absolute paths
+    component: () => import('./Shared/layouts/PublicLayout.vue'),
+    meta: { requiresAuth: false },
+    children: candidatesRoutes
+  },
   {
     path: '/',
     component: () => import('./Shared/layouts/UserLayout.vue'),

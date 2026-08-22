@@ -2,26 +2,29 @@
 
 namespace App\Persistence\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Candidate extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
-        'job_post_id',
-        'name',
-        'status',
-        'ai_score',
-        'created_at', // For seeding purposes
-        'updated_at'
+        'tracking_id', 'firstname', 'lastname', 'email', 'summary', 'address', 'country', 'phone_number'
     ];
 
-    public function jobPost()
+    public function applications()
     {
-        return $this->belongsTo(JobPost::class, 'job_post_id');
+        return $this->hasMany(Application::class);
     }
 
-    public function interviews()
+    public function experiences()
     {
-        return $this->hasMany(Interview::class);
+        return $this->hasMany(Experience::class);
+    }
+
+    public function educations()
+    {
+        return $this->hasMany(Education::class);
     }
 }
